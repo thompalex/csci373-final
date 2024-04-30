@@ -17,3 +17,6 @@
   - tree_results.csv
   - regression_results.csv
   - neuralnet_results.csv
+
+### Resources
+- Proposal: https://docs.google.com/document/d/1w1qieAY8ugCho3lTt41lBSkeRHhYPBC_B1jymxnnQtc/edit
