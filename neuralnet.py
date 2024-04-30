@@ -66,19 +66,16 @@ def predict(network, testing_X, testing_y, is_regression):
         _, performance = network.evaluate(testing_X, testing_y)
         return performance
 
-def main(file_path=None, learning_rate=None, num_neurons=None, train_percentage=None, random_seed=None):
+def main(learning_rate=None, num_neurons=None, train_percentage=None, random_seed=None):
     # Get command line arguments
-    print(file_path)
-    if not file_path:
-        file_path = sys.argv[1]
-        learning_rate = float(sys.argv[2])
-        num_neurons = int(sys.argv[3])
-        train_percentage = float(sys.argv[4])
-        random_seed = int(sys.argv[5])
-    is_regression = file_path in ["energy.csv", "seoulbike.csv"]
+    if not learning_rate:
+        learning_rate = float(sys.argv[1])
+        num_neurons = int(sys.argv[2])
+        train_percentage = float(sys.argv[3])
+        random_seed = int(sys.argv[4])
 
-    dataset = pd.read_csv(file_path)
-    convert_labels(dataset)
+    dataset_p1 = pd.read_json("data/in/automatedAccountData.json")
+    dataset_p2 = pd.read_json("data/in/nonautomatedAccountData.json")
     dataset = one_hot_encode(dataset)
     dataset = scale_dataset(dataset)
     num_unique_labels = len(dataset["label"].unique())
