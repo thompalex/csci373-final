@@ -20,3 +20,4 @@
 
 ### Resources
 - Proposal: https://docs.google.com/document/d/1w1qieAY8ugCho3lTt41lBSkeRHhYPBC_B1jymxnnQtc/edit
+- Checkin: https://docs.google.com/document/d/1V7CCYG0ZtFNtAKm-vP6g8VMn13s5CUfpCHO-SoA9bnk/edit
