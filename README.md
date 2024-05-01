@@ -1,5 +1,6 @@
 # APPLIED MACHINE LEARNING FINAL PROJECT SPRING 2024
 ## By Leander Herman, Emilio Sierra, Alex Thompson
+### Original github dataset (https://github.com/fcakyon/instafake-dataset/tree/master)
 - INTRODUCTION: TODO
 ### Task assignment for now:
 - Complete scripts which run these on our datasets:
