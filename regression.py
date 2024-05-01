@@ -82,7 +82,7 @@ def create_and_save_line(results, dataset_name, minmaxusage):
              y='Mean Absolute Error')
     )
     filename = f"{dataset_name}_{'rescaled' if minmaxusage == 'true' else 'original'}_mae_line.png"
-    line_chart.save(filename=filename)
+    line_chart.save(filename=f"charts/{filename}")
     print(f"Line chart saved as {filename}")
 
 if __name__ == "__main__":
@@ -124,3 +124,21 @@ if __name__ == "__main__":
     models = initialize_models()
     results = train_and_evaluate(models, X_train, X_test, y_train, y_test)
     print("Models trained and evaluated.")
+
+    create_and_save_bar(results, dataset_filename[:-4], minmaxusage)
+
+    # Output results to CSV
+    output_filename = f"regression_results_{int(split_ratio * 100)}p_{random_seed}"
+    if minmaxusage == "true":
+        output_filename += "_rescaled"
+    output_filename += ".csv"
+
+    print(f"Writing results to {output_filename}...")
+    with open(output_filename, 'w') as file:
+        file.write("Model,MAE\n")
+        for model_name, mae in results:
+            file.write(f"{model_name},{mae}\n")
+
+    print(f"Results written to {output_filename}")
+
+
