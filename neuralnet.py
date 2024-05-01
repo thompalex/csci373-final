@@ -73,7 +73,7 @@ def main(learning_rate=None, num_neurons=None, train_percentage=None, random_see
         train_percentage = float(sys.argv[3])
         random_seed = int(sys.argv[4])
 
-    dataset = pd.read_csv("data/in/combined_data_with_averages.csv")
+    dataset = pd.read_csv("data/in/combined_data_with_hashes.csv")
     dataset.fillna(0, inplace=True)
     dataset = scale_dataset(dataset)
     num_unique_labels = len(dataset["label"].unique())
@@ -89,7 +89,7 @@ def main(learning_rate=None, num_neurons=None, train_percentage=None, random_see
 
     train_network(network, training_X, training_y, learning_rate, False)
     result = predict(network, testing_X, testing_y, False)
-    with open("results.csv", "a") as f:
+    with open("data/out/neuralnet_results.csv", "a") as f:
         f.write(f"{learning_rate},{num_neurons},{result}\n")
 
 if __name__ == "__main__":

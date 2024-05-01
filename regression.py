@@ -91,6 +91,32 @@ if __name__ == "__main__":
     random_seed = int(sys.argv[2])
     minmaxusage = sys.argv[3]
 
+    # code for line chart
+
+    # training_percentages = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]
+    # all_results = []
+
+    # for tp in training_percentages:
+    #     print(f"Processing training percentage: {tp * 100}%")
+    #     dataset = pandas.read_csv(dataset_filename)
+    #     dataset = one_hot_encoder(dataset)
+    #     if minmaxusage == "true":
+    #         dataset = scale_dataset(dataset)
+        
+    #     X = dataset.drop('label', axis=1)
+    #     y = dataset['label']
+    #     X_train, X_test, y_train, y_test = train_test_split(X, y, train_size=tp, random_state=random_seed)
+        
+    #     models = initialize_models()
+    #     results = train_and_evaluate(models, X_train, X_test, y_train, y_test)
+        
+    #     for model_name, mae in results:
+    #         all_results.append({'Model': model_name, 'MAE': mae, 'Training Percentage': tp * 100})
+
+    # Create and save the line chart
+    # create_and_save_line(all_results, dataset_filename[:-4], minmaxusage)
+    # print("Line chart saved.")
+
     print("Loading data...")
     dataset = pandas.read_csv(dataset_filename)
     print(f"Dataset loaded from {dataset_filename}")
@@ -124,3 +150,21 @@ if __name__ == "__main__":
     models = initialize_models()
     results = train_and_evaluate(models, X_train, X_test, y_train, y_test)
     print("Models trained and evaluated.")
+
+    create_and_save_bar(results, dataset_filename[:-4], minmaxusage)
+
+    # Output results to CSV
+    output_filename = f"regression_results_{int(split_ratio * 100)}p_{random_seed}"
+    if minmaxusage == "true":
+        output_filename += "_rescaled"
+    output_filename += ".csv"
+
+    print(f"Writing results to {output_filename}...")
+    with open(output_filename, 'w') as file:
+        file.write("Model,MAE\n")
+        for model_name, mae in results:
+            file.write(f"{model_name},{mae}\n")
+
+    print(f"Results written to {output_filename}")
+
+
