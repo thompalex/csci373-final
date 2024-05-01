@@ -59,7 +59,7 @@ def train_network(network: tf.keras.models.Sequential, training_X, training_y, l
     # create a logger to save the training details to file
     csv_logger = tf.keras.callbacks.CSVLogger('logger.csv')
     # train the network for 200 epochs (setting aside 20% of the training data as validation data)
-    network.fit(training_X, training_y, validation_split=0.1, epochs=250, callbacks=[csv_logger])
+    network.fit(training_X, training_y, validation_split=0.2, epochs=300, callbacks=[csv_logger])
 
 def predict(network, testing_X, testing_y, is_regression):
         _, performance = network.evaluate(testing_X, testing_y)
@@ -73,7 +73,7 @@ def main(learning_rate=None, num_neurons=None, train_percentage=None, random_see
         train_percentage = float(sys.argv[3])
         random_seed = int(sys.argv[4])
 
-    dataset = pd.read_csv("data/in/combined_data_with_hashes.csv")
+    dataset = pd.read_csv("data/in/combined_data_with_hashes_and_averages.csv")
     dataset.fillna(0, inplace=True)
     dataset = scale_dataset(dataset)
     num_unique_labels = len(dataset["label"].unique())
