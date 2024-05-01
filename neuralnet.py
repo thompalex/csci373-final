@@ -40,27 +40,26 @@ def split_data(data_set, train_percentage, seed):
 # creates a neural network with one hidden layer
 def create_network(num_hidden, num_output):
     hidden_layer = tf.keras.layers.Dense(num_hidden, activation='sigmoid')
-    output_layer = tf.keras.layers.Dense(num_output)
+    output_layer = tf.keras.layers.Dense(1)
     all_layers = [hidden_layer, output_layer]
     network = tf.keras.models.Sequential(all_layers)
     return network
 
 # trains a neural network with given training data
 def train_network(network: tf.keras.models.Sequential, training_X, training_y, learning_rate, is_regression):
+    if training_X.shape[0] == 0:
+        print("Training data is empty.")
+        return
     # create the algorithm that learns the weight of the network (with a learning rate of 0.0001)
     optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
     # create the loss function function that tells optimizer how much error it has in its predictions
-    loss_function = None
-    if is_regression:
-        loss_function = tf.keras.losses.MeanSquaredError()
-    else:
-        loss_function = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+    loss_function = tf.keras.losses.BinaryCrossentropy(from_logits=True)  # Use BinaryCrossentropy for binary classification
     # prepare the network for training
     network.compile(optimizer=optimizer, loss=loss_function, metrics=["mean_absolute_error" if is_regression else "accuracy"])
     # create a logger to save the training details to file
     csv_logger = tf.keras.callbacks.CSVLogger('logger.csv')
     # train the network for 200 epochs (setting aside 20% of the training data as validation data)
-    network.fit(training_X, training_y, validation_split=0.2, epochs=250, callbacks=[csv_logger])
+    network.fit(training_X, training_y, validation_split=0.1, epochs=250, callbacks=[csv_logger])
 
 def predict(network, testing_X, testing_y, is_regression):
         _, performance = network.evaluate(testing_X, testing_y)
@@ -74,12 +73,11 @@ def main(learning_rate=None, num_neurons=None, train_percentage=None, random_see
         train_percentage = float(sys.argv[3])
         random_seed = int(sys.argv[4])
 
-    dataset_p1 = pd.read_json("data/in/automatedAccountData.json")
-    dataset_p2 = pd.read_json("data/in/nonautomatedAccountData.json")
-    dataset = one_hot_encode(dataset)
+    dataset = pd.read_csv("data/in/combined_data_with_averages.csv")
+    dataset.fillna(0, inplace=True)
     dataset = scale_dataset(dataset)
     num_unique_labels = len(dataset["label"].unique())
-    print(dataset)
+    print(dataset.head())
 
     training_X, training_y, testing_X, testing_y = split_data(dataset, train_percentage, random_seed)
     
@@ -87,17 +85,12 @@ def main(learning_rate=None, num_neurons=None, train_percentage=None, random_see
     training_y = tf.convert_to_tensor(training_y, dtype=tf.float32)
     testing_X = tf.convert_to_tensor(testing_X, dtype=tf.float32)
     testing_y = tf.convert_to_tensor(testing_y, dtype=tf.float32)
+    network = create_network(num_neurons, num_unique_labels)
 
-    network = None
-    if is_regression:
-        network = create_network(num_neurons, 1)
-    else:
-        network = create_network(num_neurons, num_unique_labels)
-
-    train_network(network, training_X, training_y, learning_rate, is_regression)
-    result = predict(network, testing_X, testing_y, is_regression)
+    train_network(network, training_X, training_y, learning_rate, False)
+    result = predict(network, testing_X, testing_y, False)
     with open("results.csv", "a") as f:
-        f.write(f"{file_path.split('.')[0]},{learning_rate},{num_neurons},{result}\n")
+        f.write(f"{learning_rate},{num_neurons},{result}\n")
 
 if __name__ == "__main__":
     main()
