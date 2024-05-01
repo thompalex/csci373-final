@@ -16,10 +16,26 @@ def combine_and_average():
         else:
             processed_dataset[column] = dataset[column]
     processed_dataset["label"] = dataset["automatedBehaviour"]
-    processed_dataset.fillna(-1, inplace=True)
     processed_dataset.to_csv("data/in/combined_data_with_averages.csv", index=False)
 
 def combine_posts():
-    pass
+    automated = pd.read_json("data/in/automatedAccountData.json")
+    nonautomated = pd.read_json("data/in/nonautomatedAccountData.json")
+    dataset = pd.concat([automated, nonautomated])
+    media_columns = [column for column in dataset.columns if column.startswith("media")]
+    dataset.fillna(-1, inplace=True)
+    combined_posts_list = []
+    for ind, user in dataset.iterrows():
+        # print(user)
+        combined_posts = zip(*[user[column] for column in media_columns])
+        combined_posts = [hash(tuple(post)) for post in combined_posts]
+        # dataset.at[ind, 'combined_posts'] = hash(tuple(combined_posts))
+        combined_posts_list.append(hash(tuple(combined_posts)))
+    dataset.drop(media_columns, axis=1, inplace=True)
+    dataset['combined_posts'] = combined_posts_list
+    dataset["label"] = dataset["automatedBehaviour"]
+    dataset.drop("automatedBehaviour", axis=1, inplace=True)
+    dataset.to_csv("data/in/combined_data_with_hashes.csv", index=False)
 
-combine_and_average()
+# combine_and_average()
+combine_posts()
