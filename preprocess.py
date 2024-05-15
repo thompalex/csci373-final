@@ -92,7 +92,11 @@ if __name__ == "__main__":
     # combine_posts(dataset)
     # column_names = dataset.columns
     # print(", ".join(column_names))
-    use_both()
+    # use_both()
+    dataset = pd.read_csv("data/in/combined_data_with_hashes_and_averages.csv")
+    train_X, train_y, test_X, test_y = split_data(dataset, 0.75, 1234)
+    train_X, test_X = feature_selection(train_X, train_y, test_X)
+
 
 # combine_and_average()
 #combine_posts()

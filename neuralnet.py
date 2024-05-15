@@ -84,7 +84,7 @@ def main(learning_rate=None, num_neurons=None, train_percentage=None, random_see
 
     training_X, training_y, testing_X, testing_y = split_data(dataset, train_percentage, random_seed)
     training_X, testing_X = feature_selection(training_X, training_y, testing_X, 'backward')
-    print(1)
+    # print(1)
     
     training_X = tf.convert_to_tensor(training_X, dtype=tf.float32)
     training_y = tf.convert_to_tensor(training_y, dtype=tf.float32)
@@ -99,8 +99,8 @@ def main(learning_rate=None, num_neurons=None, train_percentage=None, random_see
     return result
 
 if __name__ == "__main__":
-    learning_rates = [0.001, 0.01, 0.1, 0.0001]
-    num_neurons = [4, 8, 16, 32]
+    learning_rates = [0.0001, 0.001, 0.01, 0.1]
+    num_neurons = [4, 8, 16, 32, 64]
     results = []
 
     for lr in learning_rates:
@@ -109,21 +109,25 @@ if __name__ == "__main__":
             results.append((lr, neurons, result))
 
     with open('temp_results.txt', 'w') as f:
-        f.write(results)
+        f.write("[" + ", ".join([str(r) for r in results]) + "]")
+    # with open('temp_results.txt', 'r') as f:
+    #     results = eval(f.readline())
+
     # Plotting the results
     fig, ax = plt.subplots(figsize=(10, 6))
 
-    learning_rates = [lr for lr, _, _ in results]
-    num_neurons = [neurons for _, neurons, _ in results]
-    performance = [result for _, _, result in results]
+    learning_rate_dict = {}
 
-    for i, lr in enumerate(learning_rates):
-        x = [num_neurons[j] for j in range(i, len(num_neurons), len(learning_rates))]
-        y = [performance[j] for j in range(i, len(performance), len(learning_rates))]
-        ax.plot(x, y, label=f"LR={lr}")
+    for lr, neurons, result in results:
+        if lr not in learning_rate_dict:
+            learning_rate_dict[lr] = []
+        learning_rate_dict[lr].append((result, neurons))
 
+    for lr in learning_rate_dict:
+        X, Y = zip(*learning_rate_dict[lr])
+        ax.plot(Y, X)
     ax.set_xlabel("Number of Neurons")
     ax.set_ylabel("Performance")
     ax.set_title("Neural Network Performance")
-    ax.legend()
+    ax.legend(learning_rate_dict.keys(), title="Learning Rate")
     plt.show()
