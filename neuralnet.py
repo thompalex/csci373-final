@@ -2,6 +2,7 @@ import pandas as pd
 import sys
 import numpy as np
 import tensorflow as tf
+from preprocess import feature_selection
 
 def scale_dataset(dataset):
     scaled_dataset = dataset.copy()
@@ -80,6 +81,8 @@ def main(learning_rate=None, num_neurons=None, train_percentage=None, random_see
     print(dataset.head())
 
     training_X, training_y, testing_X, testing_y = split_data(dataset, train_percentage, random_seed)
+    training_X, testing_X = feature_selection(training_X, training_y, testing_X, 'backward')
+    print(1)
     
     training_X = tf.convert_to_tensor(training_X, dtype=tf.float32)
     training_y = tf.convert_to_tensor(training_y, dtype=tf.float32)
