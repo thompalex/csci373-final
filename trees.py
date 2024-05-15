@@ -1,110 +1,132 @@
 import sys
 import time
+from preprocess import feature_selection, split_data
+import math
 import pandas as pd
 import numpy as np
-import sklearn.tree, sklearn.ensemble
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import confusion_matrix, accuracy_score
+from sklearn.model_selection import train_test_split
 import matplotlib.pyplot as plt
+from sklearn.preprocessing import MinMaxScaler
 
-class DecisionTrees:
-    def __init__(self, train_x, train_y, num_trees, labels):
-        self.train_x, self.train_y = train_x, train_y
-        self.num_trees = num_trees
-        self.model = sklearn.ensemble.RandomForestClassifier(n_estimators=num_trees) if num_trees > 1 else sklearn.tree.DecisionTreeClassifier()
-        self.model.fit(self.train_x, self.train_y)
-        self.labels = labels
+def scale_dataset(dataset):
+    scaled_dataset = dataset.copy()
+    for column in dataset.columns:
+        if column.lower() == "label" or dataset[column].dtype=='object': continue
+        minval, maxval = min(scaled_dataset[column]), max(scaled_dataset[column])
+        if minval != maxval:
+            scaled_dataset[column] = (scaled_dataset[column] - minval) / (maxval - minval)
+        else:
+            scaled_dataset[column] = 0
+    return scaled_dataset
 
-    def predict(self, test):
-        # It will return a prediction for each test instance and maintain the ordering
-        preds = self.model.predict(test)
-        return preds
-
-    def create_confusion_matrix(self, test, preds):
-        # Create the confusion matrix for our predictions
-        confusion_matrix = {actual_label: {pred_label: 0 for pred_label in self.labels} for actual_label in self.labels}
-        for i in range(len(test)):
-            confusion_matrix[test[i]][preds[i]] += 1
-        return confusion_matrix
-
-    def print_metrics(self, confusion_matrix):
-        # Generate and print the accuracy of our model
-        accuracy = sum([confusion_matrix[label][label] for label in self.labels]) / sum([sum(confusion_matrix[label].values()) for label in self.labels])
-        recall = {label: confusion_matrix[label][label] / sum([confusion_matrix[label][pred_label] for pred_label in self.labels]) for label in self.labels}
-        for label in recall:
-            print(f'Recall for {label}: {recall[label]}')
-        print(f'Accuracy: {accuracy}')
-        return accuracy
-        
-
-    def create_output_file(self, confusion_matrix, outfile_name):
-        # Create our output file from the confusion matrix
-        output = ",".join(self.labels) + ",\n"
-        for actual_label in self.labels:
-            for pred_label in self.labels:
-                output += f'{confusion_matrix[actual_label][pred_label]},'
-            output += f'{actual_label}\n'
-        outfile_name = outfile_name if outfile_name else f"outfile.csv"
-        with open(outfile_name, "w") as file:
-            file.write(output)
-
-def log_tree(tree, dataset, dataset_filename, train_percentage, seed):
-    # create the filename
-    filename = ("tree"
-                + "_" + dataset_filename[:-4]
-                + "_1t"
-                + "_" + str(int(train_percentage * 100)) + "p"
-                + "_" + str(seed) + ".png")
-
-    attributes = list(dataset.drop("label", axis=1))
-    labels = sorted(list(dataset["label"].unique()))
-
-    fig = plt.figure(figsize=(100, 100))
-    plotted = sklearn.tree.plot_tree(tree,
-                                     feature_names=attributes,
-                                     class_names=labels,
-                                     filled=True,
-                                     rounded=True)
-    fig.savefig(filename)
-
-def load_data(filepath, train_percentage, random_seed):
-    np.random.seed(random_seed)  # Set the numpy random seed
-    data = pd.read_csv(filepath)
-    labels = data["label"].unique()
-    train = data.sample(frac=train_percentage, random_state=random_seed)
-    test = data.drop(train.index)
-    train_X, train_Y = train.drop("label", axis=1), train["label"]
-    test_X, test_Y = test.drop("label", axis=1), test["label"]
-    return data, train_X, train_Y, test_X, test_Y, labels
+def create_decision_tree_get_accuracy(X_train, X_test, y_train, y_test):
+    # Training the Decision Tree model on the Training set
+    classifier = DecisionTreeClassifier()
+    classifier.fit(X_train, y_train)
+    # Predicting the Test set results
+    y_pred = classifier.predict(X_test)
+    # Making the Confusion Matrix
+    cm = confusion_matrix(y_test, y_pred)
+    #print(cm)
+    a = accuracy_score(y_test, y_pred)
+    return a
 
 
-def main(filepath, num_trees, train_size, seed, save_tree=False):
-    startTime = time.time()
-    data, train_x, train_y, test_x, test_y, labels = load_data(filepath, train_size, seed)
-    # Create an instance of the DecisionTree class
-    model = DecisionTrees(train_x, train_y, num_trees, labels)
-    # Make predictions
-    preds = model.predict(test_x)
-    if save_tree:
-        log_tree(model.model, data, filepath, train_size, seed)
-    # Evaluate the model
-    confusion_matrix = model.create_confusion_matrix(test_y.to_list(), preds)
-    accuracy = model.print_metrics(confusion_matrix)
-    # Write the output to a file
-    outfile_name = f"results_{filepath.split('.')[0]}_{num_trees}t_{int(train_size*100)}p_{seed}.csv"
-    model.create_output_file(confusion_matrix, outfile_name)
-    print(f"Time taken: {(time.time() - startTime) / 60} minutes")
-    return accuracy
+def create_random_forest_get_accuracy(X_train, X_test, y_train, y_test, estimate):
+    # Training the Decision Tree model on the Training set
+    classifier = RandomForestClassifier(n_estimators=estimate)
+    classifier.fit(X_train, y_train)
+    # Predicting the Test set results
+    y_pred = classifier.predict(X_test)
+    # Making the Confusion Matrix
+    cm = confusion_matrix(y_test, y_pred)
+    print(cm)
+    a = accuracy_score(y_test, y_pred)
+    return a
 
-if __name__ == "__main__":
-    if len(sys.argv) < 5:
-        print("Usage: python knn.py <filepath> <num_trees> <train_size> <seed>")
-        sys.exit(1)
-    # Load in our command line arguments
-    filepath = sys.argv[1]
-    num_trees = int(sys.argv[2])
-    train_size = float(sys.argv[3])
-    seed = int(sys.argv[4])
-    save_tree = False
-    if len(sys.argv) == 6:
-        save_tree = bool(sys.argv[5])
-    # Run the knn algorithm
-    main(filepath, num_trees, train_size, seed, save_tree)
+def find_best_trees(output_name, X_train, X_test, y_train, y_test):
+    # Define the list of tree amounts
+    tree_amounts = [5, 10, 25, 50, 100]
+    # Initialize lists to store the accuracies and number of trees
+    accuracies = []
+
+    # Call the random forest accuracy function for each tree amount
+    for amount in tree_amounts:
+        accuracy = create_random_forest_get_accuracy(X_train, X_test, y_train, y_test, amount)
+        accuracies.append(accuracy)
+        print(f"Random Forest Accuracy for {amount} trees: {accuracy}")
+    # Find the best accuracy and corresponding number of trees
+    best_accuracy = max(accuracies)
+    best_num_trees = tree_amounts[accuracies.index(best_accuracy)]
+    num_trees = ['5', '10', '25', '50', '100']
+    # Display the results in a bar chart
+    plt.bar(num_trees, accuracies)
+    plt.xlabel('Number of Trees')
+    plt.ylabel('Accuracy')
+    plt.title('Random Forest Accuracy for Different Number of Trees')
+    plt.savefig(output_name)
+    plt.show()
+
+    # Save the best accuracy and number of trees
+    best_accuracy_and_num_trees = {'Best Accuracy': best_accuracy, 'Number of Trees': best_num_trees}
+    print("Best Accuracy and Number of Trees: ", best_accuracy_and_num_trees)
+    return best_accuracy
+
+
+
+def without_feature(X_train, X_test, y_train, y_test):
+    # Get decision tree accuracy
+    decision_tree_accuracy = create_decision_tree_get_accuracy(X_train, X_test, y_train, y_test)
+    print("Decision Tree Accuracy: ", decision_tree_accuracy)
+    best_acc = find_best_trees("Best_trees_without_.png", X_train, X_test, y_train, y_test)
+    compare_accuracy(decision_tree_accuracy, best_acc, "Tree_Forest_Comparison.png")
+
+
+def with_feature(X_train, X_test, y_train, y_test):
+    X_train, X_test = feature_selection(X_train, y_train, X_test, "backward")
+    # Get decision tree accuracy
+    decision_tree_accuracy = create_decision_tree_get_accuracy(X_train, X_test, y_train, y_test)
+    print("Decision Tree Accuracy: ", decision_tree_accuracy)
+    best_acc = find_best_trees("Best_trees_with_.png", X_train, X_test, y_train, y_test)
+    compare_accuracy(decision_tree_accuracy, best_acc, "Tree_Forest_Comparison_wFeature.png")
+
+
+def compare_accuracy(decision_tree_accuracy, random_forest_accuracy, output_name):
+    # Define the labels and heights for the bar chart
+    labels = ['Decision Tree', 'Random Forest']
+    heights = [decision_tree_accuracy, random_forest_accuracy]
+
+    # Create the bar chart
+    plt.bar(labels, heights)
+    plt.xlabel('Model')
+    plt.ylabel('Accuracy')
+    plt.title('Comparison of Decision Tree and Random Forest Accuracy')
+    plt.savefig(output_name)
+    plt.show()
+
+
+
+def main():
+    random_seed = 1234
+    training_precentage = 0.75
+    dataset_name = "data/in/combined_data_with_hashes_and_averages.csv"
+    print("Dataset: ", dataset_name)
+    # Importing the dataset
+    dataset = pd.read_csv(dataset_name)
+    # dataset = convert_labels(dataset)
+    dataset = scale_dataset(dataset)
+
+    # Splitting the dataset into the Training set and Test set
+    X_train, y_train, X_test, y_test = split_data(dataset, training_precentage, random_seed)
+
+    without_feature(X_train, X_test, y_train, y_test)
+    with_feature(X_train, X_test, y_train, y_test)
+
+# random_forest_accuracy = create_random_forest_get_accuracy(X_train, X_test, y_train, y_test)
+# print("Random Forest Accuracy: ", random_forest_accuracy)   
+# print("- Finished Random Forest")
+
+main()

@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
 import trees
 
-training_percentages = [0.2, 0.4, 0.6, 0.8]
-dataset = "combined_data_with_averages.csv"
+training_percentages = [0.2, 0.4, 0.6, 0.75]
+dataset = "data/in/combined_data_with_hashes_and_averages.csv"
 
 
 results = []
