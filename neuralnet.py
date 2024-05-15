@@ -3,6 +3,8 @@ import sys
 import numpy as np
 import tensorflow as tf
 from preprocess import feature_selection
+import matplotlib.pyplot as plt
+
 
 def scale_dataset(dataset):
     scaled_dataset = dataset.copy()
@@ -60,7 +62,7 @@ def train_network(network: tf.keras.models.Sequential, training_X, training_y, l
     # create a logger to save the training details to file
     csv_logger = tf.keras.callbacks.CSVLogger('logger.csv')
     # train the network for 200 epochs (setting aside 20% of the training data as validation data)
-    network.fit(training_X, training_y, validation_split=0.2, epochs=300, callbacks=[csv_logger])
+    network.fit(training_X, training_y, validation_split=0.2, epochs=400, callbacks=[csv_logger])
 
 def predict(network, testing_X, testing_y, is_regression):
         _, performance = network.evaluate(testing_X, testing_y)
@@ -94,6 +96,34 @@ def main(learning_rate=None, num_neurons=None, train_percentage=None, random_see
     result = predict(network, testing_X, testing_y, False)
     with open("data/out/neuralnet_results.csv", "a") as f:
         f.write(f"{learning_rate},{num_neurons},{result}\n")
+    return result
 
 if __name__ == "__main__":
-    main()
+    learning_rates = [0.001, 0.01, 0.1, 0.0001]
+    num_neurons = [4, 8, 16, 32]
+    results = []
+
+    for lr in learning_rates:
+        for neurons in num_neurons:
+            result = main(learning_rate=lr, num_neurons=neurons, train_percentage=0.75, random_seed=1234)
+            results.append((lr, neurons, result))
+
+    with open('temp_results.txt', 'w') as f:
+        f.write(results)
+    # Plotting the results
+    fig, ax = plt.subplots(figsize=(10, 6))
+
+    learning_rates = [lr for lr, _, _ in results]
+    num_neurons = [neurons for _, neurons, _ in results]
+    performance = [result for _, _, result in results]
+
+    for i, lr in enumerate(learning_rates):
+        x = [num_neurons[j] for j in range(i, len(num_neurons), len(learning_rates))]
+        y = [performance[j] for j in range(i, len(performance), len(learning_rates))]
+        ax.plot(x, y, label=f"LR={lr}")
+
+    ax.set_xlabel("Number of Neurons")
+    ax.set_ylabel("Performance")
+    ax.set_title("Neural Network Performance")
+    ax.legend()
+    plt.show()

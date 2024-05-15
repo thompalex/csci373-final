@@ -1,5 +1,6 @@
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 
 def combine_and_average():
     automated = pd.read_json("data/in/automatedAccountData.json")
@@ -30,6 +31,7 @@ def combine_posts(dataset):
         # dataset.at[ind, 'combined_posts'] = hash(tuple(combined_posts))
         combined_posts_list.append(hash(tuple(combined_posts)))
     dataset.drop(media_columns, axis=1, inplace=True)
+    print(combined_posts_list)
     dataset['combined_posts'] = combined_posts_list
     # dataset.drop("automatedBehaviour", axis=1, inplace=True)
     dataset.to_csv("data/in/combined_data_with_hashes.csv", index=False)
@@ -37,7 +39,10 @@ def combine_posts(dataset):
 
 def use_both():
     processed_dataset = combine_and_average()
-    processed_dataset["combined_posts"] = combine_posts(processed_dataset)
+    automated = pd.read_json("data/in/automatedAccountData.json")
+    nonautomated = pd.read_json("data/in/nonautomatedAccountData.json")
+    dataset = pd.concat([automated, nonautomated])
+    processed_dataset["combined_posts"] = combine_posts(dataset)
     processed_dataset.to_csv("data/in/combined_data_with_hashes_and_averages.csv", index=False)
 
 import sklearn.feature_selection
@@ -80,9 +85,15 @@ def split_data(data_set, train_percentage, seed):
 
 
 if __name__ == "__main__":
-    dataset = pd.read_csv("data/in/combined_data_with_hashes_and_averages.csv")
-    training_X, training_y, testing_X, testing_y = split_data(dataset, 0.75, 1234)
-    training_X, testing_X = feature_selection(training_X, training_y, testing_X)
+    # dataset = pd.read_csv("data/in/combined_data_with_hashes_and_averages.csv")
+    # automated = pd.read_json("data/in/automatedAccountData.json")
+    # nonautomated = pd.read_json("data/in/nonautomatedAccountData.json")
+    # dataset = pd.concat([automated, nonautomated])
+    # combine_posts(dataset)
+    # column_names = dataset.columns
+    # print(", ".join(column_names))
+    use_both()
+
 # combine_and_average()
 #combine_posts()
 # use_both()
