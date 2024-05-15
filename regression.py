@@ -3,7 +3,7 @@ import sys
 from plotnine import *
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression, Lasso, Ridge
-from sklearn.svm import SVR
+from sklearn.svm import SVR, SVC
 from sklearn.tree import DecisionTreeRegressor
 from sklearn.metrics import mean_absolute_error
 
@@ -25,14 +25,10 @@ def scale_dataset(dataset):
 
 def initialize_models():
     models = {
-        "linear": LinearRegression(),
-        "LASSO": Lasso(),
-        "ridge": Ridge(),
-        "svm_poly2": SVR(kernel='poly', degree=2),
-        "svm_poly3": SVR(kernel='poly', degree=3),
-        "svm_poly4": SVR(kernel='poly', degree=4),
-        "svm_rbf": SVR(kernel='rbf'),
-        "tree": DecisionTreeRegressor()
+        "svm_poly2": SVC(kernel='poly', degree=2),
+        "svm_poly3": SVC(kernel='poly', degree=3),
+        "svm_poly4": SVC(kernel='poly', degree=4),
+        "svm_rbf": SVC(kernel='rbf')
     }
     return models
 
@@ -48,9 +44,10 @@ def train_and_evaluate(models, X_train, X_test, y_train, y_test):
     results = []
     for name, model in models.items():
         model.fit(X_train, y_train)  # Train model
-        predictions = model.predict(X_test)  # Predict on test data
-        mae = mean_absolute_error(y_test, predictions)  # Calculate MAE
-        results.append((name, mae))  # Store results
+        predictions = model.predict(X_test) # Predict on test data
+        print(f"Predictions: {predictions}")
+        accuracy = model.score(X_test, y_test)  # Calculate accuracy score
+        results.append((name, accuracy))  # Store results
     return results
 
 def create_and_save_bar(results, dataset_name, minmaxusage):
@@ -63,33 +60,34 @@ def create_and_save_bar(results, dataset_name, minmaxusage):
         geom_col(position="dodge") +  # Use geom_col for bar charts; 'position=dodge' might be omitted if not needed
         ylim(0, max(results_df['MAE']) * 1.1) +  # Dynamic Y-limit based on max MAE value
         labs(
-            title=f'MAE for {dataset_name} {"with Rescaling" if minmaxusage == "true" else "without Rescaling"}',
+            title=f'Accuracy for {dataset_name} {"with Rescaling" if minmaxusage == "true" else "without Rescaling"}',
             x='Model',
-            y='Mean Absolute Error'
+            y='Accuracy'
         ) 
     )
-    filename = f"{dataset_name}_{'rescaled' if minmaxusage == 'true' else 'original'}_mae_bar.png"
+    filename = f"{dataset_name}_{'rescaled' if minmaxusage == 'true' else 'original'}_accuracy_bar.png"
     bar_chart.save(filename=filename)
     print(f"Bar chart saved as {filename}")
 
 def create_and_save_line(results, dataset_name, minmaxusage):
     df = pandas.DataFrame(results)
     line_chart = (
-        ggplot(df, aes('Training Percentage', 'MAE', color='Model')) +
+        ggplot(df, aes('Training Percentage', 'Accuracy', color='Model')) +
         geom_line() +
         labs(title='Model Performance Across Training Percentages',
              x='Training Percentage (%)',
-             y='Mean Absolute Error')
+             y='Accuracy')
     )
-    filename = f"{dataset_name}_{'rescaled' if minmaxusage == 'true' else 'original'}_mae_line.png"
+    filename = f"{dataset_name}_{'rescaled' if minmaxusage == 'true' else 'original'}_accurary_line.png"
     line_chart.save(filename=filename)
     print(f"Line chart saved as {filename}")
 
 if __name__ == "__main__":
-    dataset_filename = ('data/in/combined_data_with_averages.csv')
+    dataset_filename = ('data/in/combined_data_with_hashes_and_averages.csv')
     split_ratio = float(sys.argv[1])
     random_seed = int(sys.argv[2])
     minmaxusage = sys.argv[3]
+
 
     # code for line chart
 
@@ -120,7 +118,7 @@ if __name__ == "__main__":
     print("Loading data...")
     dataset = pandas.read_csv(dataset_filename)
     print(f"Dataset loaded from {dataset_filename}")
-
+    dataset.fillna(0, inplace=True)
     print(dataset.head())
 
     print("Applying one-hot encoding...")
@@ -161,7 +159,7 @@ if __name__ == "__main__":
 
     print(f"Writing results to {output_filename}...")
     with open(output_filename, 'w') as file:
-        file.write("Model,MAE\n")
+        file.write("Model,Accuracy\n")
         for model_name, mae in results:
             file.write(f"{model_name},{mae}\n")
 
